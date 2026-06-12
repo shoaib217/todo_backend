@@ -16,10 +16,10 @@ Handler middleware(Handler handler) {
             if (_todoRepository == null) {
               final connection = await Connection.open(
                 Endpoint(
-                  host: 'localhost',
+                  host: '127.0.0.1',
                   database: 'todo_db',
                   username: 'postgres',
-                  password: 'password',
+                  password: 'shoaibsayyed',
                 ),
                 settings: const ConnectionSettings(sslMode: SslMode.disable),
               );

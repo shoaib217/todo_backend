@@ -39,9 +39,9 @@ Future<Response> _get(RequestContext context, int id) async {
 
 Future<Response> _put(RequestContext context, int id) async {
   final repository = context.read<TodoRepository>();
-  final body = await context.request.json() as Map<String, dynamic>;
 
   try {
+    final body = await context.request.json() as Map<String, dynamic>;
     final todo = Todo.fromJson({...body, 'id': id});
     final updatedTodo = await repository.updateTodo(id, todo);
 
@@ -50,10 +50,12 @@ Future<Response> _put(RequestContext context, int id) async {
     }
 
     return Response.json(body: updatedTodo.toJson());
-  } catch (e) {
+  } catch (e, st) {
+    print('Error in PUT /todos/$id: $e');
+    print(st);
     return Response.json(
       statusCode: HttpStatus.badRequest,
-      body: {'error': 'Invalid request body'},
+      body: {'error': 'Invalid request body', 'details': e.toString()},
     );
   }
 }

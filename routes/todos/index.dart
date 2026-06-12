@@ -28,9 +28,9 @@ Future<Response> _get(RequestContext context) async {
 
 Future<Response> _post(RequestContext context) async {
   final repository = context.read<TodoRepository>();
-  final body = await context.request.json() as Map<String, dynamic>;
   
   try {
+    final body = await context.request.json() as Map<String, dynamic>;
     // ID is ignored as it's auto-generated in DB
     final todo = Todo.fromJson({...body, 'id': 0});
     final createdTodo = await repository.createTodo(todo);
@@ -38,10 +38,12 @@ Future<Response> _post(RequestContext context) async {
       statusCode: HttpStatus.created,
       body: createdTodo.toJson(),
     );
-  } catch (e) {
+  } catch (e, st) {
+    print('Error in POST /todos: $e');
+    print(st);
     return Response.json(
       statusCode: HttpStatus.badRequest,
-      body: {'error': 'Invalid request body'},
+      body: {'error': 'Invalid request body', 'details': e.toString()},
     );
   }
 }
