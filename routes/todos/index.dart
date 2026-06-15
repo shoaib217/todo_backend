@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:todo_backend/src/exceptions/app_exceptions.dart';
 import 'package:todo_backend/src/models/todo.dart';
 import 'package:todo_backend/src/repositories/todo_repository.dart';
 
@@ -11,19 +12,32 @@ Future<Response> onRequest(RequestContext context) async {
       return _get(context);
     case HttpMethod.post:
       return _post(context);
-    case HttpMethod.delete:
-    case HttpMethod.head:
-    case HttpMethod.options:
-    case HttpMethod.patch:
-    case HttpMethod.put:
+    default:
       return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 }
 
 Future<Response> _get(RequestContext context) async {
   final repository = context.read<TodoRepository>();
-  final todos = await repository.getAllTodos();
-  return Response.json(body: todos.map((e) => e.toJson()).toList());
+  final params = context.request.uri.queryParameters;
+  final userId = int.tryParse(params['userId'] ?? '');
+
+  if (userId == null) {
+    return Response.json(
+      statusCode: HttpStatus.badRequest,
+      body: {'error': 'userId is required as a query parameter'},
+    );
+  }
+
+  try {
+    final todos = await repository.getAllTodos(userId);
+    return Response.json(body: todos.map((e) => e.toJson()).toList());
+  } on TodoException catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.internalServerError,
+      body: {'error': e.message},
+    );
+  }
 }
 
 Future<Response> _post(RequestContext context) async {
@@ -38,12 +52,15 @@ Future<Response> _post(RequestContext context) async {
       statusCode: HttpStatus.created,
       body: createdTodo.toJson(),
     );
-  } catch (e, st) {
-    print('Error in POST /todos: $e');
-    print(st);
+  } on TodoException catch (e) {
     return Response.json(
       statusCode: HttpStatus.badRequest,
-      body: {'error': 'Invalid request body', 'details': e.toString()},
+      body: {'error': e.message},
+    );
+  } catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.badRequest,
+      body: {'error': 'Invalid request body'},
     );
   }
 }

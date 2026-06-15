@@ -2,13 +2,17 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
+import 'package:todo_backend/src/exceptions/app_exceptions.dart';
 import 'package:todo_backend/src/models/todo.dart';
 import 'package:todo_backend/src/repositories/todo_repository.dart';
 
 Future<Response> onRequest(RequestContext context, String id) async {
   final todoId = int.tryParse(id);
   if (todoId == null) {
-    return Response(statusCode: HttpStatus.badRequest);
+    return Response.json(
+      statusCode: HttpStatus.badRequest,
+      body: {'error': 'Invalid ID format'},
+    );
   }
 
   switch (context.request.method) {
@@ -18,23 +22,27 @@ Future<Response> onRequest(RequestContext context, String id) async {
       return _put(context, todoId);
     case HttpMethod.delete:
       return _delete(context, todoId);
-    case HttpMethod.head:
-    case HttpMethod.options:
-    case HttpMethod.patch:
-    case HttpMethod.post:
+    default:
       return Response(statusCode: HttpStatus.methodNotAllowed);
   }
 }
 
 Future<Response> _get(RequestContext context, int id) async {
   final repository = context.read<TodoRepository>();
-  final todo = await repository.getTodoById(id);
-
-  if (todo == null) {
-    return Response(statusCode: HttpStatus.notFound);
+  try {
+    final todo = await repository.getTodoById(id);
+    return Response.json(body: todo.toJson());
+  } on NotFoundException catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.notFound,
+      body: {'error': e.message},
+    );
+  } on TodoException catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.internalServerError,
+      body: {'error': e.message},
+    );
   }
-
-  return Response.json(body: todo.toJson());
 }
 
 Future<Response> _put(RequestContext context, int id) async {
@@ -45,28 +53,39 @@ Future<Response> _put(RequestContext context, int id) async {
     final todo = Todo.fromJson({...body, 'id': id});
     final updatedTodo = await repository.updateTodo(id, todo);
 
-    if (updatedTodo == null) {
-      return Response(statusCode: HttpStatus.notFound);
-    }
-
     return Response.json(body: updatedTodo.toJson());
-  } catch (e, st) {
-    print('Error in PUT /todos/$id: $e');
-    print(st);
+  } on NotFoundException catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.notFound,
+      body: {'error': e.message},
+    );
+  } on TodoException catch (e) {
     return Response.json(
       statusCode: HttpStatus.badRequest,
-      body: {'error': 'Invalid request body', 'details': e.toString()},
+      body: {'error': e.message},
+    );
+  } catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.badRequest,
+      body: {'error': 'Invalid request body'},
     );
   }
 }
 
 Future<Response> _delete(RequestContext context, int id) async {
   final repository = context.read<TodoRepository>();
-  final deleted = await repository.deleteTodo(id);
-
-  if (!deleted) {
-    return Response(statusCode: HttpStatus.notFound);
+  try {
+    await repository.deleteTodo(id);
+    return Response(statusCode: HttpStatus.noContent);
+  } on NotFoundException catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.notFound,
+      body: {'error': e.message},
+    );
+  } on TodoException catch (e) {
+    return Response.json(
+      statusCode: HttpStatus.internalServerError,
+      body: {'error': e.message},
+    );
   }
-
-  return Response(statusCode: HttpStatus.noContent);
 }

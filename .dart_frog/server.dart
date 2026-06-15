@@ -8,6 +8,8 @@ import 'package:dart_frog/dart_frog.dart';
 
 import '../routes/todos/index.dart' as todos_index;
 import '../routes/todos/[id].dart' as todos_$id;
+import '../routes/auth/signup.dart' as auth_signup;
+import '../routes/auth/login.dart' as auth_login;
 
 import '../routes/_middleware.dart' as middleware;
 
@@ -25,7 +27,8 @@ Future<HttpServer> createServer(InternetAddress address, int port) {
 Handler buildRootHandler() {
   final pipeline = const Pipeline().addMiddleware(middleware.middleware);
   final router = Router()
-    ..mount('/todos', (context) => buildTodosHandler()(context));
+    ..mount('/todos', (context) => buildTodosHandler()(context))
+    ..mount('/auth', (context) => buildAuthHandler()(context));
   return pipeline.addHandler(router);
 }
 
@@ -33,6 +36,13 @@ Handler buildTodosHandler() {
   final pipeline = const Pipeline();
   final router = Router()
     ..all('/<id>', (context,id,) => todos_$id.onRequest(context,id,))..all('/', (context) => todos_index.onRequest(context,));
+  return pipeline.addHandler(router);
+}
+
+Handler buildAuthHandler() {
+  final pipeline = const Pipeline();
+  final router = Router()
+    ..all('/login', (context) => auth_login.onRequest(context,))..all('/signup', (context) => auth_signup.onRequest(context,));
   return pipeline.addHandler(router);
 }
 

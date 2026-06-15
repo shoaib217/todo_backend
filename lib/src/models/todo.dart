@@ -7,6 +7,7 @@ part 'todo.g.dart';
 class Todo extends Equatable {
   const Todo({
     required this.id,
+    required this.userId,
     required this.title,
     this.completed = false,
     this.dueDate,
@@ -16,6 +17,7 @@ class Todo extends Equatable {
   factory Todo.fromJson(Map<String, dynamic> json) => _$TodoFromJson(json);
 
   final int id;
+  final int userId;
   final String title;
   final bool completed;
   final DateTime? dueDate;
@@ -25,6 +27,7 @@ class Todo extends Equatable {
 
   Todo copyWith({
     int? id,
+    int? userId,
     String? title,
     bool? completed,
     DateTime? dueDate,
@@ -32,6 +35,7 @@ class Todo extends Equatable {
   }) {
     return Todo(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       title: title ?? this.title,
       completed: completed ?? this.completed,
       dueDate: dueDate ?? this.dueDate,
@@ -40,5 +44,5 @@ class Todo extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, title, completed, dueDate, priority];
+  List<Object?> get props => [id, userId, title, completed, dueDate, priority];
 }
