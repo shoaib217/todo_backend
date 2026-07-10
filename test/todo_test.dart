@@ -5,8 +5,8 @@ void main() {
   group('Todo', () {
     test('supports value comparisons', () {
       expect(
-        Todo(id: 1, title: 'test'),
-        Todo(id: 1, title: 'test'),
+        Todo(id: 1, title: 'test', userId: 0),
+        Todo(id: 1, title: 'test', userId: 0),
       );
     });
 
@@ -25,7 +25,7 @@ void main() {
     });
 
     test('toJson works correctly', () {
-      final todo = Todo(id: 1, title: 'test', completed: true);
+      final todo = Todo(id: 1, title: 'test', completed: true, userId: 0);
       final json = todo.toJson();
       expect(json['id'], 1);
       expect(json['title'], 'test');
